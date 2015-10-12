@@ -1,0 +1,130 @@
+<?php
+require_once( $_SERVER['DOCUMENT_ROOT'] . '/signetarmorlite/site/wp-load.php');
+require_once( $_SERVER['DOCUMENT_ROOT'] . '/signetarmorlite/site/wp-includes/plugin.php');
+require_once( $_SERVER['DOCUMENT_ROOT'] . '/signetarmorlite/site/wp-includes/pluggable.php');
+
+?>
+<style type="text/css">
+#pdf-wrapper{ width:330px; min-height:475px; margin:0 auto; padding:35px 50px 0 50px;}	
+#pdf-wrapper h2{ margin:0px 0 4px 0; padding:0px; font-size:20px; color: #666; font-weight:normal;}
+#pdf-wrapper h3{ margin:0px 0 4px 0; padding:0px; font-size:17px; color:#666; font-weight:normal;}
+#pdf-wrapper p{ margin:0px 0 7px 0; padding:0px; font-size:10px;}
+#pdf-wrapper .name, #pdf-wrapper .company_name, #pdf-wrapper .address1, #pdf-wrapper .address2, #pdf-wrapper .phone, #pdf-wrapper .coupon_text, #pdf-wrapper .expire { position:absolute; font-size:11px;}
+#pdf-wrapper .name, #pdf-wrapper .company_name, #pdf-wrapper .address1, #pdf-wrapper .address2, #pdf-wrapper .phone{ margin-left:160px;}
+#pdf-wrapper .company_name{ margin-top:17px;}
+#pdf-wrapper .address1{ margin-top:45px;}
+#pdf-wrapper .address2{ margin-top:63px;}
+#pdf-wrapper .phone{ margin-top:80px;}
+</style>
+<?php 
+ if (isset($_POST['cmdSubmit'])) { 
+ $_SESSION['DocName'] = $_POST['DocName'];
+ $_SESSION['custId'] = $_POST['custId'];
+ $_SESSION['BusName'] = $_POST['BusName'];
+ $_SESSION['Address1'] = $_POST['Address1'];
+ $_SESSION['Address2'] = $_POST['Address2'];
+ $_SESSION['Area'] = $_POST['Area'];
+ $_SESSION['Prefix'] = $_POST['Prefix'];
+ $_SESSION['Number'] = $_POST['Number'];
+ $_SESSION['Ext'] = $_POST['Ext'];
+ $_SESSION['CouponText'] = $_POST['CouponText'];
+ $_SESSION['ExpireMonth'] = $_POST['ExpireMonth'];
+ $_SESSION['ExpireDay'] = $_POST['ExpireDay'];
+ $_SESSION['ExpireYear'] = $_POST['ExpireYear']; 
+ $_SESSION['txtFile'] = $_FILES['txtFile']['name'];
+ } 
+?> 
+
+         <?php
+$sPathPS = $_SERVER[DOCUMENT_ROOT];
+$target = $sPathPS . "/signetarmorlite/site/wp-content/themes/signet/upload_bin/";
+$target = $target . basename( $_FILES['txtFile']['name']) ;
+$ok=1;
+
+//This is our size condition
+if ($uploaded_size > 2097152){
+echo "<p>Your file is too large. We have a 2MB limit. <a href='javascript:history.back();'>[Go Back]</a></p><br>";
+$ok=0;
+}
+
+$types = array('image/jpeg', 'image/gif', 'image/tif');
+if( isset( $_FILES ) ){
+	if (in_array($_FILES['txtFile']['type'], $types)) {
+		// file is okay continue
+	} else {
+		$ok = 0;
+	} 
+}else{
+	$ok = 1;
+}
+
+//Here we check that $ok was not set to 0 by an error
+if ($ok==0){
+echo "<p>Sorry your file was not uploaded. It may be the wrong filetype. We only allow JPG, GIF, and TIF filetypes. <a href='javascript:history.back();'>[Go Back]</a></p>";
+}
+
+//If everything is ok we try to upload it
+else{
+if(move_uploaded_file($_FILES['txtFile']['tmp_name'], $target)){
+echo "The file ". basename( $_FILES['uploadedfile']['name']). " has been uploaded";
+}
+else{
+echo "<p>Sorry, there was a problem uploading your file. <a href='javascript:history.back();'>[Go Back]</a></p>";
+}
+}
+	$DIR = $sPathPS . "/signetarmorlite/site/wp-content/themes/signet/upload_bin/";
+	if ($handle = opendir($DIR)) {
+	
+	// This is the correct way to loop over the directory.
+		while (false !== ($file = readdir($handle))) {
+			if ( filemtime($DIR.$file) <= time()-60) {
+				if(  file_exists($DIR.$file) ){
+					unlink($DIR.$file);
+				}
+			   
+			}
+		}
+	
+		closedir($handle);
+	}
+	else
+	{
+	echo "cannot open dir";
+	}
+
+?>	
+<?php 
+$my_postid = $_SESSION["custId"];//This is page id or post id
+$args = array( 'post_type' => 'postcards', 'posts_per_page' => 1, 'p' => $my_postid );
+$loop = new WP_Query( $args );
+while ( $loop->have_posts() ) : $loop->the_post();
+?>
+
+
+<div <?php if (has_post_thumbnail( $post->ID ) ): $image = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'single-post-thumbnail' ); ?>style="background: url(<?php echo $image[0]; ?>) no-repeat center" <?php endif; ?>>
+<div id="pdf-wrapper">
+<?php the_content();?>
+<img src="<?php bloginfo('template_url'); ?>/upload_bin/<?php echo $_SESSION['txtFile'] ;?>" alt=""/>
+          <span class="name"><strong><?php if (isset($_POST["DocName"])) {?><?php echo $_SESSION['DocName']; ?><?php } else {?><?php echo "no name is set";}?></strong></span>
+          <?php //echo $_SESSION["custId"]; ?>
+          <span class="company_name"><strong><?php echo $_SESSION["BusName"]; ?></strong></span>
+          <span class="address1"><?php echo $_SESSION["Address1"]; ?></span>
+          <span class="address2"><?php echo $_SESSION["Address2"]; ?></span>
+          <span class="phone"><?php echo $_SESSION["Area"]; ?>-<?php echo $_SESSION["Prefix"]; ?>-<?php echo $_SESSION["Number"]; ?> <?php if(isset($_SESSION['Ext'])){?> ext. <?php echo $_SESSION["Ext"]; ?><?php }?></span>
+          <span class="coupon_text"><?php echo $_SESSION["CouponText"]; ?></span>
+          <span class="expire"><?php echo $_SESSION["ExpireMonth"]; ?>/<?php echo $_SESSION["ExpireDay"]; ?>/<?php echo $_SESSION["ExpireYear"]; ?></span>	
+          <?php 
+/*$content_post = get_post($my_postid);
+$content = $content_post->post_content;
+$content = apply_filters('the_content', $content);
+$content = str_replace(']]>', ']]&gt;', $content);
+echo $content;*/?>
+
+<?php
+endwhile;
+?>
+</div>
+</div>
+
+
+       

@@ -1,0 +1,199 @@
+<?php
+require_once( $_SERVER['DOCUMENT_ROOT'] . '/signetarmorlite/site/wp-load.php');
+require_once( $_SERVER['DOCUMENT_ROOT'] . '/signetarmorlite/site/wp-includes/plugin.php');
+require_once( $_SERVER['DOCUMENT_ROOT'] . '/signetarmorlite/site/wp-includes/pluggable.php');
+
+?>
+<?php get_header();?>
+
+<style type="text/css">
+.cf:before,
+.cf:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+.cf:after {
+    clear: both;
+}
+.cf {
+    *zoom: 1;
+}
+@page { margin: 0px; }
+#pdf-wrapper{ margin:0 auto; padding:0;}	
+#pdf-wrapper h2{ margin:0px 0 4px 0; padding:0px; font-size:19pt; color: #000; font-weight:normal;}
+#pdf-wrapper h3{ margin:0px 0 4px 0; padding:0px; font-size:16pt; color:#000; font-weight:normal;}
+p{ margin:0px 0 0px 0; padding:0px; font-size:7pt; font-family:Arial, Helvetica, sans-serif; line-height:32px;}
+#pdf-wrapper .name, #pdf-wrapper .company_name, #pdf-wrapper .address1, #pdf-wrapper .address2, #pdf-wrapper .phone, #pdf-wrapper .coupon_text, #pdf-wrapper .expire, #pdf-wrapper .content-area {}
+#pdf-wrapper .content-area{ margin-top:0px; height:875px;}
+#pdf-wrapper .content-area p{ margin-top:25px;}
+#pdf-wrapper .name{ font-weight:bold;}
+#pdf-wrapper .name{ margin-top:50px !important;}
+#pdf-wrapper .company_name{ margin-top:10px !important;}
+#pdf-wrapper .address1{ margin-top:50px !important;}
+#pdf-wrapper .address2{ margin-top:10px !important;}
+#pdf-wrapper .phone{ margin-top:10px !important;}
+#pdf-wrapper .coupon_text{margin-left: 23px !important;top: 40px !important; font-weight:bold; position:absolute;}
+#pdf-wrapper .expire{ margin-top:358px !important; margin-left:220px !important; position:absolute;}
+#pageContainer2{ display:none;}
+</style>
+
+<?php 
+ if (isset($_POST['cmdSubmit'])) { 
+	 $_SESSION['DocName'] = $_POST['DocName'];
+	 $_SESSION['custId'] = $_POST['custId'];
+	 $_SESSION['BusName'] = $_POST['BusName'];
+	 $_SESSION['Address1'] = $_POST['Address1'];
+	 $_SESSION['Address2'] = $_POST['Address2'];
+	 $_SESSION['Area'] = $_POST['Area'];
+	 $_SESSION['Prefix'] = $_POST['Prefix'];
+	 $_SESSION['Number'] = $_POST['Number'];
+	 $_SESSION['Ext'] = $_POST['Ext'];
+	 $_SESSION['CouponText'] = $_POST['CouponText'];
+	 $_SESSION['ExpireMonth'] = $_POST['ExpireMonth'];
+	 $_SESSION['ExpireDay'] = $_POST['ExpireDay'];
+	 $_SESSION['ExpireYear'] = $_POST['ExpireYear']; 
+	 $_SESSION['txtFile'] = $_FILES['txtFile']['name'];
+ } 
+?> 
+
+<?php
+$sPathPS = $_SERVER[DOCUMENT_ROOT];
+$target = $sPathPS . "/signetarmorlite/site/wp-content/themes/signet/upload_bin/";
+$target = $target . basename( $_SESSION['txtFile'] ) ;
+$ok=1;
+
+//This is our size condition
+if ($uploaded_size > 2097152){
+echo "<p>Your file is too large. We have a 2MB limit. <a href='javascript:history.back();'>[Go Back]</a></p><br>";
+$ok=0;
+}
+
+$types = array('image/jpeg', 'image/gif', 'image/tif');
+if( isset( $_FILES['txtFile'] ) ){
+	if (in_array($_FILES['txtFile']['type'], $types)) {
+		// file is okay continue
+	} else {
+		$ok = 0;
+	} 
+
+	//Here we check that $ok was not set to 0 by an error
+	if ( $ok == 0 ){
+		echo "<p>Sorry your file was not uploaded. It may be the wrong filetype. We only allow JPG, GIF, and TIF filetypes.</p>";
+	}else{
+		if(move_uploaded_file($_FILES['txtFile']['tmp_name'], $target)){
+			echo "The file ". basename( $_FILES['uploadedfile']['name']). " has been uploaded";
+		}else{
+			echo "<p>Sorry, there was a problem uploading your file. <a href='javascript:history.back();'>[Go Back]</a></p>";
+		}
+	}
+}
+
+
+
+$DIR = $sPathPS . "/signetarmorlite/site/wp-content/themes/signet/upload_bin/";
+if ($handle = opendir($DIR)) {
+
+// This is the correct way to loop over the directory.
+	while (false !== ($file = readdir($handle))) {
+		if ( filemtime($DIR.$file) <= time()-60) {
+			if( $file != '..' && $file != '.' )
+			if(  file_exists($DIR.$file) ){
+				//echo $DIR.$file;
+				unlink($DIR.$file);
+			}
+		   
+		}
+	}
+
+	closedir($handle);
+}
+else
+{
+echo "cannot open dir";
+}
+
+?>	
+<div id="container">
+        
+
+    <div class="top_box_ecps">
+      <div class="top_img_ecps">
+        <div class="top_img_txt_ecps">
+          <h1>
+            <?php echo get_post_meta(get_the_ID(), 'Image-text', true); ?>
+          </h1>
+        </div><!-- .top_img_txt_ecps -->
+        <?php /*if(has_post_thumbnail()) : ?>
+          <?php the_post_thumbnail(array(960,286)); ?>
+        <?php else :*/ ?>
+          <img width="960" height="286" alt="default_featured_image" class="attachment-960x286 wp-post-image" src="<?php bloginfo('template_directory'); ?>/images/default_featured_img_1.jpg" />
+        <?php //endif; ?>
+      </div><!-- .top_img_ecps -->
+    </div><!-- .top_box_ecps -->
+            
+    <div id="generic" class="page_sidebar resources_bar">
+      <?php dynamic_sidebar( 'ecps-widget-area' ); ?>
+    </div><!-- #generic -->
+            
+    <div id="main_content" role="main">
+      <div id="main_content_sub" class="escps_content">
+<?php 
+$my_postid = $_SESSION["custId"];//This is page id or post id
+$args = array( 'post_type' => 'postcards', 'posts_per_page' => 1, 'p' => $my_postid );
+$loop = new WP_Query( $args );
+while ( $loop->have_posts() ) : $loop->the_post();
+?>
+        <div class="ecps_title">
+          <?php the_title() ?>
+        </div><!-- .ecps_title -->
+ <a class="button" target="_blank" href="<?php bloginfo('template_url'); ?>/dompdf/dompdf.php?base_path=www/&options[Attachment]=1&input_file=form.php#toolbar=0&amp;view=FitH&amp;statusbar=0&amp;messages=0&amp;navpanes=0&amp;orientation=landscape\">DOWNLOAD</a> 
+<div <?php if (has_post_thumbnail( $post->ID ) ): $image = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'single-post-thumbnail' ); ?> style=" background:url(<?php echo $image[0]; ?>) no-repeat center top;width:960px; height:1390px;  padding:110px 100px 0 65px;page-break-inside:avoid;"<?php endif; /*1390*/?>>
+
+    <div id="pdf-wrapper">
+            
+            <?php /*if(has_term('ads-horizontal', 'product_category')) { ?>
+                <img src="<?php bloginfo('template_url'); ?>/upload_bin/<?php echo $_SESSION['txtFile'] ;?>" alt=""/>
+            <?php }*/?>
+            <div class="content-area">
+                <?php 
+                $content_post = get_post($my_postid);
+                $content = $content_post->post_content;
+                $content = apply_filters('the_content', $content);
+                $content = str_replace(']]>', ']]&gt;', $content);
+                echo $content;?>
+            </div>
+            <div style="float:left;width: 425px;" class="cf">
+            	<p class="coupon_text"><strong><?php echo $_SESSION["CouponText"]; ?></strong></p>
+                <p class="expire"><?php echo $_SESSION["ExpireMonth"]; ?>/<?php echo $_SESSION["ExpireDay"]; ?>/<?php echo $_SESSION["ExpireYear"];?> </p>
+                
+            </div>
+            <div style="float:left; margin-top:15px; width:auto; margin-left:500px;">
+                <p class="name"><strong><?php echo $_SESSION['DocName']; ?></strong></p>
+                <p class="company_name"><strong><?php echo $_SESSION["BusName"]; ?></strong></p>
+                <p class="address1"><?php echo $_SESSION["Address1"]; ?></p>
+                <p class="address2"><?php echo $_SESSION["Address2"]; ?></p>
+                <p class="phone">
+                    <?php echo $_SESSION["Area"]; ?>-
+                    <?php echo $_SESSION["Prefix"]; ?>-
+                    <?php echo $_SESSION["Number"]; ?> 
+                    <?php if(isset($_SESSION['Ext'])){?> 
+                        ext. 
+                        <?php echo $_SESSION["Ext"]; ?>
+                    <?php }?>
+                </p>
+            </div>
+            <?php /*echo $_SESSION["custId"]; ?> */?>
+                        
+    </div>
+</div>
+<?php endwhile; ?>
+      </div><!-- .main_content_sub -->
+    </div><!-- #main_content -->
+
+
+            
+</div><!-- #container -->
+
+<?php get_footer(); ?>
+
+       
