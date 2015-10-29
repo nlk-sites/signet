@@ -30,7 +30,10 @@ get_header();
           $hdots .= '<a href="#"'.  ($k==0 ? ' class="first"' : '') .'>'. $k .'</a>';
         }
         $hdots .= '<div class="r"></div></div>';
-        echo $hdots;
+        
+        if ( count( $attachments ) > 1 ) {
+          echo $hdots;
+        }
       }
     endwhile; 
   endif; 
