@@ -15,11 +15,13 @@ function signetNextFSlide() {
 }
 
 function signetSlidesIn() {
-	jQuery('#hdots a:first').addClass('on');
 	jQuery('#home .slide:first').fadeIn(400, function() {
 		jQuery(this).addClass('on');
 	});
-	hcycler = setTimeout(signetNextHomeSlide, hcycledur);
+	if ( jQuery('#hdots a').size() >  1 ) {
+		jQuery('#hdots a:first').addClass('on');
+		hcycler = setTimeout(signetNextHomeSlide, hcycledur);
+	}
 }
 
 function signetHideFlash() {
