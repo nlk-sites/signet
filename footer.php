@@ -20,7 +20,7 @@
             <div class="in">
               <h3 class="ftitle"><span>Kodak </span>Lens</h3>
               <?php
-              $lenspages = explode('<li', wp_list_pages( 'title_li=&child_of=7&echo=0&exclude=20,3465' ) );
+              $lenspages = explode('<li', wp_list_pages( 'title_li=&child_of=7&echo=0&exclude=20,3465,3795' ) );
               @array_shift($lenspages);
               $lensmenus = '<ul><li'. implode( '<li', array_slice($lenspages,0,5) ) .'</ul><ul><li'. implode( '<li', array_slice($lenspages,5) ) .'</ul>';
               echo str_replace( '>Kodak', '><strong>Kodak</strong>', $lensmenus );
